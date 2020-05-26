@@ -7,7 +7,7 @@
                 <h1 class="mt-4">{{ post.header }}</h1>
                 <hr>
                 <!-- Date/Time -->
-                <p>Posted on {{ post.created_at }}</p>
+                <p>Posted on {{ post.created_at | moment("DD.MM.YYYY HH:mm:ss") }}</p>
                 <hr>
                 <!-- Preview Image -->
 <!--                <img class="img-fluid rounded" src="http://placehold.it/900x300" alt="">-->

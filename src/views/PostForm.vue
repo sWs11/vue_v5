@@ -6,6 +6,8 @@
                 <h1>{{ route_name }}</h1>
 <!--                <form v-on:submit="submitForm($event)">-->
                 <button class="btn btn-info" type="button" v-on:click="generatePost">Generate Post</button>
+
+                <button class="btn btn-warning ml-2"><router-link to="/editPost/32">Edit Post 32</router-link></button>
 <!--                <button class="btn btn-danger" type="button" v-on:click="commonHandle($event)">CLiCK</button>-->
 <!--                <button class="btn btn-danger" type="button" v-on:click="eventListeners('handle1', $event)">CLiCK</button>-->
                 <hr>
@@ -32,11 +34,7 @@
                                 v-on:change="fieldBlurEvent('category_id', $event)"
                                 v-model="category_id"
                         >
-                            <option value="1">Category 1</option>
-                            <option value="2">Category 2</option>
-                            <option value="3">Category 3</option>
-                            <option value="4">Category 4</option>
-                            <option value="5">Category 5</option>
+                            <option v-for="category in categories" v-bind:value="category.id" >{{ category.name }}</option>
                         </select>
                         <div class="invalid-feedback" v-html="validation_results.category_id.message"></div>
                     </div>
@@ -65,15 +63,15 @@
                         <div class="invalid-feedback" v-html="validation_results.text.message"></div>
                     </div>
                     <div class="form-group">
-                        <button class="btn btn-success w-100" v-bind:disabled="$v.$error">Submit</button>
+                        <button class="btn btn-success w-100" v-bind:disabled="$v.$anyError || !$v.$anyDirty">Submit</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!--<pre>
+        <pre>
             {{ $v }}
-        </pre>-->
+        </pre>
 
     </main>
 </template>
@@ -81,6 +79,7 @@
 <script>
     import { required, minLength, maxLength } from 'vuelidate/lib/validators';
     import Faker from 'faker';
+    // import toastr from "toastr";
     // const { required, minLength } = require('vuelidate/lib/validators');
 
     export default {
@@ -132,6 +131,8 @@
             },
 
             getPostDataForEdit() {
+
+                // toastr.info('Are you the 6 fingered man?');
                 this.$http.get('http://learn.vue.backend.v1.loc/api/post/' + this.post_id)
                     .then((success_response) => {
                             let post_data = success_response.body;
@@ -165,10 +166,12 @@
                         .then((success_response) => {
                                 // console.log('success response', success_response);
                                 // this.clearForm();
+                                this.$showMessage(success_response.body.message, success_response.body.status);
                             },
                             (error_response) => {
                                 if(error_response.status === 422) {
-                                    this.showBackendValidateErrors(error_response.body.errors)
+                                    this.showBackendValidateErrors(error_response.body.errors);
+                                    this.$showMessage(error_response.body.message, 'error');
                                 }
                             }
                         )
@@ -178,10 +181,12 @@
                         .then((success_response) => {
                                 // console.log('success response', success_response);
                                 this.clearForm();
+                                this.$showMessage(success_response.body.message, success_response.body.status);
                             },
                             (error_response) => {
                                 if(error_response.status === 422) {
-                                    this.showBackendValidateErrors(error_response.body.errors)
+                                    this.showBackendValidateErrors(error_response.body.errors);
+                                    this.$showMessage(error_response.body.message, 'error');
                                 }
                             }
                         )
@@ -285,11 +290,27 @@
             },
         },
         computed: {
-
+            categories() {
+                return this.$store.state.categories;
+            },
         },
         mounted() {
             if (this.$route.name === 'EditPost' && this.$route.params['id']) {
                 this.getPostDataForEdit();
+            }
+
+            this.$store.dispatch("getCategories");
+        },
+        watch: {
+            $route(route_to, route_from) {
+                this.post_id = route_to.params['id'];
+                if (route_to.name === 'EditPost' && route_to.params['id'] && route_to.params['id'] !== route_from.params['id']) {
+                    this.getPostDataForEdit();
+                } else if(route_to.name === 'CreatePost') {
+                    this.clearForm();
+                }
+                // this.page = route_to.params['page'] ? route_to.params['page'] : 1;
+                // this.getPosts();
             }
         }
     }
